@@ -28,7 +28,7 @@ public abstract class PropertyCommand extends SubCommand {
         sendMessage(sender, "&cSyntax&8: &3&l/tab &9group&3/&9player &3<name> &9<property> &3<value...>");
         sendMessage(sender, "&7Valid Properties are:");
         sendMessage(sender, " - &9tabprefix&3/&9customtabname&3/&9tabsuffix");
-        sendMessage(sender, " - &9tagprefix&3/&9tagsuffix");
+        sendMessage(sender, " - &9tagprefix&3/&9customtagname&3/&9tagsuffix");
     }
 
     protected void trySaveEntity(@Nullable TabPlayer sender, @NotNull String[] args) {

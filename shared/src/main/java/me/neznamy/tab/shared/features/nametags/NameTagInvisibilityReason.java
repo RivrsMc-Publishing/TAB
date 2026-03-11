@@ -12,5 +12,8 @@ public enum NameTagInvisibilityReason {
     MEETING_CONFIGURED_CONDITION,
 
     /** /tab nametag hide command */
-    HIDE_COMMAND
+    HIDE_COMMAND,
+
+    /** customtagname property resolved to empty string */
+    EMPTY_CUSTOM_TAG_NAME
 }

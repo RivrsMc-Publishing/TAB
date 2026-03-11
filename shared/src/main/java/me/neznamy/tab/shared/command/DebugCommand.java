@@ -97,9 +97,11 @@ public class DebugCommand extends SubCommand {
         }
         if (tab.getNameTagManager() != null) {
             showProperty(sender, analyzed.teamData.prefix, analyzed.teamData.disabled.get());
+            showProperty(sender, analyzed.teamData.customTagName, analyzed.teamData.disabled.get());
             showProperty(sender, analyzed.teamData.suffix, analyzed.teamData.disabled.get());
         } else {
             sendMessage(sender, "&atagprefix: &cDisabled");
+            sendMessage(sender, "&acustomtagname: &cDisabled");
             sendMessage(sender, "&atagsuffix: &cDisabled");
         }
         sendMessage(sender, separator);

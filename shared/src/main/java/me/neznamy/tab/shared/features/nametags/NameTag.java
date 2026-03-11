@@ -102,15 +102,20 @@ public class NameTag extends RefreshableFeature implements NameTagManager, JoinL
             refresh = true;
         } else {
             boolean prefix = refreshed.teamData.prefix.update();
+            boolean name = refreshed.teamData.customTagName.update();
             boolean suffix = refreshed.teamData.suffix.update();
-            refresh = prefix || suffix;
+            refresh = prefix || name || suffix;
         }
-        if (refresh) updatePrefixSuffix(refreshed);
+        if (refresh) {
+            updateCustomTagNameVisibility(refreshed);
+            updatePrefixSuffix(refreshed);
+        }
     }
 
     @Override
     public void onGroupChange(@NotNull TabPlayer player) {
         if (updateProperties(player) && !player.teamData.isDisabled()) {
+            updateCustomTagNameVisibility(player);
             updatePrefixSuffix(player);
         }
     }
@@ -175,12 +180,18 @@ public class NameTag extends RefreshableFeature implements NameTagManager, JoinL
 
     @Override
     public void onServerChange(@NonNull TabPlayer p, @NotNull Server from, @NotNull Server to) {
-        if (updateProperties(p) && !p.teamData.isDisabled()) updatePrefixSuffix(p);
+        if (updateProperties(p) && !p.teamData.isDisabled()) {
+            updateCustomTagNameVisibility(p);
+            updatePrefixSuffix(p);
+        }
     }
 
     @Override
     public void onWorldChange(@NotNull TabPlayer changed, @NotNull World from, @NotNull World to) {
-        if (updateProperties(changed) && !changed.teamData.isDisabled()) updatePrefixSuffix(changed);
+        if (updateProperties(changed) && !changed.teamData.isDisabled()) {
+            updateCustomTagNameVisibility(changed);
+            updatePrefixSuffix(changed);
+        }
     }
 
     @Override
@@ -215,7 +226,9 @@ public class NameTag extends RefreshableFeature implements NameTagManager, JoinL
      */
     private void loadProperties(@NotNull TabPlayer player) {
         player.teamData.prefix = player.loadPropertyFromConfig(this, "tagprefix", "");
+        player.teamData.customTagName = player.loadPropertyFromConfig(this, "customtagname", player.getName());
         player.teamData.suffix = player.loadPropertyFromConfig(this, "tagsuffix", "");
+        updateCustomTagNameVisibility(player);
     }
 
     /**
@@ -228,8 +241,30 @@ public class NameTag extends RefreshableFeature implements NameTagManager, JoinL
      */
     private boolean updateProperties(@NotNull TabPlayer p) {
         boolean changed = p.updatePropertyFromConfig(p.teamData.prefix, "");
+        if (p.updatePropertyFromConfig(p.teamData.customTagName, p.getName())) changed = true;
         if (p.updatePropertyFromConfig(p.teamData.suffix, "")) changed = true;
         return changed;
+    }
+
+    /**
+     * Updates nametag visibility based on customtagname value.
+     * If customtagname resolves to empty string, hides the nametag.
+     * Otherwise, shows it (removes the EMPTY_CUSTOM_TAG_NAME reason).
+     *
+     * @param   player
+     *          Player to update visibility for
+     */
+    private void updateCustomTagNameVisibility(@NotNull TabPlayer player) {
+        boolean empty = player.teamData.customTagName.get().isEmpty();
+        if (empty) {
+            if (player.teamData.hideNametag(NameTagInvisibilityReason.EMPTY_CUSTOM_TAG_NAME)) {
+                updateVisibility(player);
+            }
+        } else {
+            if (player.teamData.showNametag(NameTagInvisibilityReason.EMPTY_CUSTOM_TAG_NAME)) {
+                updateVisibility(player);
+            }
+        }
     }
 
     public void onDisableConditionChange(TabPlayer p, boolean disabledNow) {

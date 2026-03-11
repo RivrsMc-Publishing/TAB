@@ -19,6 +19,9 @@ public class NameTagPlayerData {
     /** Player's tagprefix */
     public Property prefix;
 
+    /** Player's customtagname */
+    public Property customTagName;
+
     /** Player's tagsuffix */
     public Property suffix;
 
