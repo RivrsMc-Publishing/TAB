@@ -9,6 +9,10 @@ import me.neznamy.tab.shared.Property;
 import me.neznamy.tab.shared.TAB;
 import me.neznamy.tab.shared.TabConstants;
 import me.neznamy.tab.shared.features.layout.LayoutConfiguration.LayoutDefinition;
+import me.neznamy.tab.shared.features.layout.impl.LayoutBase;
+import me.neznamy.tab.shared.features.layout.impl.FakeEntryLayout;
+import me.neznamy.tab.shared.features.layout.impl.common.FixedSlot;
+import me.neznamy.tab.shared.features.layout.pattern.LayoutPattern;
 import me.neznamy.tab.shared.features.pingspoof.PingSpoof;
 import me.neznamy.tab.shared.features.playerlist.PlayerList;
 import me.neznamy.tab.shared.features.types.*;
@@ -25,7 +29,7 @@ public class LayoutManagerImpl extends RefreshableFeature implements LayoutManag
 
     private final LayoutConfiguration configuration;
     private final LayoutSkinManager skinManager;
-    private final Map<Integer, UUID> uuids = new HashMap<>();
+    private final UUID[] uuids = new UUID[80];
     private final Map<String, LayoutPattern> layouts = new LinkedHashMap<>();
     private final Map<TabPlayer, String> sortedPlayers = Collections.synchronizedMap(new TreeMap<>(Comparator.comparing(p -> p.layoutData.sortingString)));
     private PlayerList playerList;
@@ -42,10 +46,10 @@ public class LayoutManagerImpl extends RefreshableFeature implements LayoutManag
         this.configuration = configuration;
         skinManager = new LayoutSkinManager(TAB.getInstance().getConfiguration().getSkinManager(), configuration.getDefaultSkin(), configuration.getDefaultSkinHashMap());
         for (int slot=1; slot<=80; slot++) {
-            uuids.put(slot, new UUID(0, configuration.getDirection().translateSlot(slot)));
+            uuids[slot-1] = new UUID(0, configuration.getDirection().translateSlot(slot));
         }
         for (Entry<String, LayoutDefinition> entry : configuration.getLayouts().entrySet()) {
-            LayoutPattern pattern = new LayoutPattern(this, entry.getKey(), entry.getValue());
+            LayoutPattern pattern = new LayoutPattern(this, entry.getValue());
             layouts.put(pattern.getName(), pattern);
             TAB.getInstance().getFeatureManager().registerFeature(TabConstants.Feature.layout(entry.getKey()), pattern);
         }
@@ -68,11 +72,11 @@ public class LayoutManagerImpl extends RefreshableFeature implements LayoutManag
         sortedPlayers.put(p, p.sortingData.fullTeamName);
         LayoutPattern highest = getHighestLayout(p);
         if (highest != null) {
-            LayoutView view = new LayoutView(this, highest, p);
-            p.layoutData.currentLayout = new LayoutData(view);
-            view.send();
+            sendLayout(p, highest);
         }
-        tickAllLayouts();
+        for (TabPlayer all : TAB.getInstance().getOnlinePlayers()) {
+            if (all.layoutData.currentLayout != null) all.layoutData.currentLayout.view.onJoin(p);
+        }
 
         // Unformat original entries for players who can see a layout to avoid spaces due to unparsed placeholders and such
         if (highest == null) return;
@@ -104,19 +108,22 @@ public class LayoutManagerImpl extends RefreshableFeature implements LayoutManag
             if (current != null) p.layoutData.currentLayout.view.destroy();
             p.layoutData.currentLayout = null;
             if (highest != null) {
-                LayoutView view = new LayoutView(this, highest, p);
-                p.layoutData.currentLayout = new LayoutData(view);
-                view.send();
+                sendLayout(p, highest);
             }
         }
+    }
+
+    private void sendLayout(@NotNull TabPlayer player, @NotNull LayoutPattern pattern) {
+        LayoutBase view = new FakeEntryLayout(this, pattern, player);
+        player.layoutData.currentLayout = new LayoutData(view);
+        view.send();
     }
 
     @Override
     public void unload() {
         for (TabPlayer p : TAB.getInstance().getOnlinePlayers()) {
-            if (p.getVersion().getMinorVersion() < 8 || p.isBedrockPlayer()) continue;
-            for (UUID id : uuids.values()) {
-                p.getTabList().removeEntry(id);
+            if (p.layoutData.currentLayout != null) {
+                p.layoutData.currentLayout.view.destroy();
             }
         }
     }
@@ -126,7 +133,9 @@ public class LayoutManagerImpl extends RefreshableFeature implements LayoutManag
         tickAllLayouts();
     }
 
-    private @Nullable LayoutPattern getHighestLayout(@NotNull TabPlayer p) {
+    @Nullable
+    private LayoutPattern getHighestLayout(@NotNull TabPlayer p) {
+        if (p.getVersion().getMinorVersion() < 8 || p.isBedrockPlayer()) return null; // Ignore these players entirely
         if (p.layoutData.forcedLayout != null) return p.layoutData.forcedLayout;
         for (LayoutPattern pattern : layouts.values()) {
             if (pattern.isConditionMet(p)) return pattern;
@@ -134,8 +143,9 @@ public class LayoutManagerImpl extends RefreshableFeature implements LayoutManag
         return null;
     }
 
-    public @NotNull UUID getUUID(int slot) {
-        return uuids.get(slot);
+    @NotNull
+    public UUID getUUID(int slot) {
+        return uuids[slot-1];
     }
 
     public void updateTeamName(@NotNull TabPlayer p, @NotNull String teamName) {
@@ -167,7 +177,7 @@ public class LayoutManagerImpl extends RefreshableFeature implements LayoutManag
     @NotNull
     public Layout createNewLayout(@NonNull String name) {
         ensureActive();
-        return new LayoutPattern(this, name, new LayoutDefinition(null, null, Collections.emptyList(), new LinkedHashMap<>()));
+        return new LayoutPattern(this, new LayoutDefinition(name, null, null, 80, Collections.emptyList(), new LinkedHashMap<>()));
     }
 
     @Override
@@ -225,7 +235,7 @@ public class LayoutManagerImpl extends RefreshableFeature implements LayoutManag
 
         /** Layout view this data belongs to */
         @NotNull
-        public final LayoutView view;
+        public final LayoutBase view;
 
         /** Player's properties for fixed slot texts */
         @NotNull
@@ -234,5 +244,9 @@ public class LayoutManagerImpl extends RefreshableFeature implements LayoutManag
         /** Player's properties for fixed slot skins */
         @NotNull
         public final Map<FixedSlot, Property> fixedSlotSkins = new IdentityHashMap<>();
+
+        /** Player's properties for fixed slot ping values */
+        @NotNull
+        public final Map<FixedSlot, Property> fixedSlotPings = new IdentityHashMap<>();
     }
 }

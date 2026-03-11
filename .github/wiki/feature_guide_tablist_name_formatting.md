@@ -12,7 +12,7 @@
 
 # About
 This feature allows you to configure player name formats in the tablist.
-It was added to minecraft in version 1.8.
+It was added to Minecraft in version 1.8.
 Versions 1.7 and lower only allow up to 16 characters including name,
 which is too limiting and not supported by this plugin.
 If you wish to have prefix/suffix for 1.7 and lower,

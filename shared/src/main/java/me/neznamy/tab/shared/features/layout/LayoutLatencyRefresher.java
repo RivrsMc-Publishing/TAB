@@ -2,6 +2,7 @@ package me.neznamy.tab.shared.features.layout;
 
 import me.neznamy.tab.shared.TAB;
 import me.neznamy.tab.shared.TabConstants;
+import me.neznamy.tab.shared.features.layout.impl.common.PlayerSlot;
 import me.neznamy.tab.shared.features.types.RefreshableFeature;
 import me.neznamy.tab.shared.platform.TabPlayer;
 import org.jetbrains.annotations.NotNull;
@@ -32,11 +33,12 @@ public class LayoutLatencyRefresher extends RefreshableFeature {
 
     @Override
     public void refresh(@NotNull TabPlayer p, boolean force) {
+        int ping = p.getPing();
         for (TabPlayer all : TAB.getInstance().getOnlinePlayers()) {
             if (all.layoutData.currentLayout == null) continue;
             PlayerSlot slot = all.layoutData.currentLayout.view.getSlot(p);
             if (slot == null) continue;
-            all.getTabList().updateLatency(slot.getUniqueId(), p.getPing());
+            all.getTabList().updateLatency(slot.getUniqueId(), ping);
         }
     }
 }

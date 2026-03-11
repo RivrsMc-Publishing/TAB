@@ -101,11 +101,6 @@ public class NMSPacketTabList extends TrackedTabList<BukkitTabPlayer> {
     }
 
     @Override
-    public boolean containsEntry(@NonNull UUID entry) {
-        return true; // TODO?
-    }
-
-    @Override
     @Nullable
     public Skin getSkin() {
         Collection<Property> properties = ((CraftPlayer)player.getPlayer()).getProfile().getProperties().get(TEXTURES_PROPERTY);
@@ -136,6 +131,7 @@ public class NMSPacketTabList extends TrackedTabList<BukkitTabPlayer> {
             IChatBaseComponent displayName = nmsData.f();
             int latency = nmsData.d();
             int gameMode = nmsData.e().a();
+            boolean listed = nmsData.c();
             if (actions.contains(UPDATE_DISPLAY_NAME)) {
                 TabComponent forcedDisplayName = getForcedDisplayNames().get(profileId);
                 if (forcedDisplayName != null && forcedDisplayName.convert() != displayName) {
@@ -144,9 +140,8 @@ public class NMSPacketTabList extends TrackedTabList<BukkitTabPlayer> {
                 }
             }
             if (actions.contains(UPDATE_GAME_MODE)) {
-                Integer forcedGameMode = getForcedGameModes().get(profileId);
-                if (forcedGameMode != null && forcedGameMode != gameMode) {
-                    gameMode = forcedGameMode;
+                if (getBlockedSpectators().contains(profileId) && gameMode == 3) {
+                    gameMode = 0;
                     rewriteEntry = rewritePacket = true;
                 }
             }
@@ -156,11 +151,17 @@ public class NMSPacketTabList extends TrackedTabList<BukkitTabPlayer> {
                     rewriteEntry = rewritePacket = true;
                 }
             }
+            if (actions.contains(UPDATE_LISTED)) {
+                if (allPlayersHidden && nmsData.a().getMostSignificantBits() != 0) { // Filter out layout entries
+                    listed = false;
+                    rewriteEntry = rewritePacket = true;
+                }
+            }
             if (actions.contains(ADD_PLAYER)) {
                 TAB.getInstance().getFeatureManager().onEntryAdd(player, profileId, nmsData.b().getName());
             }
             updatedList.add(rewriteEntry ? new ClientboundPlayerInfoUpdatePacket.b(
-                    profileId, nmsData.b(), nmsData.c(), latency, EnumGamemode.a(gameMode), displayName,
+                    profileId, nmsData.b(), listed, latency, EnumGamemode.a(gameMode), displayName,
                     nmsData.g()
             ) : nmsData);
         }

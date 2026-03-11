@@ -19,7 +19,7 @@
   * [Tip 1 - Manually defining legacy color](#tip-1---manually-defining-legacy-color)
 
 # About
-In Minecraft 1.7, new feature called components was introduced. This is an upgrade from using legacy colors (using § symbol) into creating a json object where text, color, and magic codes (boolean values) are separated.  
+In Minecraft 1.7, new feature called components was introduced. This is an upgrade from using legacy colors (using § symbol) into creating a JSON object where text, color, and magic codes (boolean values) are separated.  
 Additionally, it received new features called hover event and click event. The only place this affects is chat, which TAB does not handle, so these functions are not implemented by TAB at all.
 
 Components have been receiving a lot of new functions since then, which are explained below.
@@ -121,7 +121,7 @@ Example:
 > ```
 > in **config.yml**.
 
-This type allows you to display minecraft heads. There are 3 ways to define a head:
+This type allows you to display Minecraft heads. There are 3 ways to define a head:
 | Type                     | Functionality                                                             |
 |--------------------------|---------------------------------------------------------------------------|
 | Player name              | The client checks recently received profiles (players on current server) and shows skin of player with that name. If no such player was found, connects to Mojang and gets skin of player with specified name. <br />**Note**: This means using a plugin for changing skins will result in the skin being changed here too (the client has a cache, so it won't be visible immediately (restarting the client resets the cache)). If using offline mode and no skin plugin, head won't display correct skin even if such player is registered at Mojang. |
@@ -136,7 +136,7 @@ Here are all the ways you can display player skins using TAB and their implement
 | `<head:signed_texture:VALUE;SIGNATURE>` | Shows head defined by value and signature | value and signature |
 | `<head:player:NAME` | Connects to Mojang and retrieves value and signature of defined player | value and signature |
 | `<head:mineskin:ID>` | Connects to Mineskin and retrieves value and signature of specified upload ID | value and signature |
-| `<head:texture:VALUE>` | Connects to Mojang and retrieves skin value and signature from "texture" | value and signature |
+| `<head:texture:TEXTURE>` | Gets the texture from `http://textures.minecraft.net/texture/TEXTURE` | value and signature |
 
 Here is an example for all types:
 ```
@@ -155,12 +155,12 @@ Here is an example for all types:
 You may be wondering what happens when you try to use these and the client is below 1.21.9.  
 See table below for behavior based on your setup.
 
-| Setup           | Legacy text decider | Displayed text for <1.21.9 players                                                                                                                                  |
-|-----------------|---------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Backend <1.21.9 | TAB                 | `<Object components were added in 1.21.9>` (even for 1.21.9+ players)                                                                                               |
-| Backend 1.21.9+ | ViaVersion          | ViaBackwards 5.5.0 - [Client disconnects with a packet decoding error](https://github.com/ViaVersion/ViaBackwards/issues/1107) <br /> ViaBackwards 5.5.1+ - (empty) |
-| BungeeCord      | TAB                 | `<Object components were added in 1.21.9>`                                                                                                                          |
-| Velocity        | Velocity            | Client disconnects with a packet decoding error                                                                                                                     |
+| Setup           | Legacy text decider | Displayed text for <1.21.9 players                                    |
+|-----------------|---------------------|-----------------------------------------------------------------------|
+| Backend <1.21.9 | TAB                 | `<Object components were added in 1.21.9>` (even for 1.21.9+ players) |
+| Backend 1.21.9+ | ViaVersion          | (empty text)                                                          |
+| BungeeCord      | TAB                 | `<Object components were added in 1.21.9>`                            |
+| Velocity        | (no one)            | Client disconnects with a packet decoding error                       |
 
 # MiniMessage
 TAB has [MiniMessage](https://docs.advntr.dev/minimessage/format.html) hook, however, it does not include this library on its own. Including it would cause conflicts, so it has to be included in the server software.
@@ -186,8 +186,8 @@ conditions:
   rgb:
     conditions:
     - '%player-version-id%>=735'
-    yes: "#00FF00 RGB text"
-    no: "&a Legacy text"
+    true: "#00FF00 RGB text"
+    false: "&a Legacy text"
 ```
 Then, use this condition with `%condition:rgb%`.
 

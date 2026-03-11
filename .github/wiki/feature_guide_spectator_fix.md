@@ -8,7 +8,7 @@
 # About
 With the introduction of spectator gamemode in 1.8,
 players having it automatically appear on the bottom of tablist with transparent name and missing [Playerlist Objective](https://github.com/NEZNAMY/TAB/wiki/Feature-guide:-Playerlist-Objective).
-This feature cancels gamemode change packets to spectator gamemode, cancelling this minecraft feature.
+This feature cancels gamemode change packets to spectator gamemode, cancelling this Minecraft feature.
 
 # Enabling
 To enable this feature, open **config.yml** and set

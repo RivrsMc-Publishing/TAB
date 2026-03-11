@@ -2,9 +2,9 @@ package me.neznamy.tab.platforms.bungeecord.tablist;
 
 import lombok.NonNull;
 import lombok.SneakyThrows;
-import me.neznamy.tab.shared.chat.component.TabComponent;
 import me.neznamy.tab.platforms.bungeecord.BungeeTabPlayer;
 import me.neznamy.tab.shared.TAB;
+import me.neznamy.tab.shared.chat.component.TabComponent;
 import me.neznamy.tab.shared.platform.decorators.TrackedTabList;
 import me.neznamy.tab.shared.util.ReflectionUtils;
 import net.md_5.bungee.UserConnection;
@@ -130,8 +130,9 @@ public abstract class BungeeTabList extends TrackedTabList<BungeeTabPlayer> {
                     if (forcedDisplayName != null) item.setDisplayName(toComponent(forcedDisplayName));
                 }
                 if (listItem.getAction() == PlayerListItem.Action.UPDATE_GAMEMODE || listItem.getAction() == PlayerListItem.Action.ADD_PLAYER) {
-                    Integer forcedGameMode = getForcedGameModes().get(item.getUuid());
-                    if (forcedGameMode != null) item.setGamemode(forcedGameMode);
+                    if (getBlockedSpectators().contains(item.getUuid()) && item.getGamemode() == 3) {
+                        item.setGamemode(0);
+                    }
                 }
                 if (listItem.getAction() == PlayerListItem.Action.UPDATE_LATENCY || listItem.getAction() == PlayerListItem.Action.ADD_PLAYER) {
                     if (getForcedLatency() != null) {
@@ -150,12 +151,18 @@ public abstract class BungeeTabList extends TrackedTabList<BungeeTabPlayer> {
                     if (forcedDisplayName != null) item.setDisplayName(toComponent(forcedDisplayName));
                 }
                 if (update.getActions().contains(PlayerListItemUpdate.Action.UPDATE_GAMEMODE)) {
-                    Integer forcedGameMode = getForcedGameModes().get(item.getUuid());
-                    if (forcedGameMode != null) item.setGamemode(forcedGameMode);
+                    if (getBlockedSpectators().contains(item.getUuid()) && item.getGamemode() == 3) {
+                        item.setGamemode(0);
+                    }
                 }
                 if (update.getActions().contains(PlayerListItemUpdate.Action.UPDATE_LATENCY)) {
                     if (getForcedLatency() != null) {
                         item.setPing(getForcedLatency());
+                    }
+                }
+                if (update.getActions().contains(PlayerListItemUpdate.Action.UPDATE_LISTED)) {
+                    if (allPlayersHidden && item.getUuid().getMostSignificantBits() != 0) { // Filter out layout entries
+                        item.setListed(false);
                     }
                 }
                 if (update.getActions().contains(PlayerListItemUpdate.Action.ADD_PLAYER)) {

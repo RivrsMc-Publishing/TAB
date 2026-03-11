@@ -2,10 +2,11 @@ package me.neznamy.tab.platforms.velocity;
 
 import com.imaginarycode.minecraft.redisbungee.RedisBungeeAPI;
 import com.velocitypowered.api.command.CommandManager;
+import com.velocitypowered.api.command.CommandMeta;
+import com.velocitypowered.api.command.SimpleCommand;
 import com.velocitypowered.api.event.scoreboard.ObjectiveEvent;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
-import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.scoreboard.ScoreboardManager;
 import lombok.Getter;
 import me.neznamy.tab.platforms.velocity.features.VelocityRedisSupport;
@@ -15,9 +16,7 @@ import me.neznamy.tab.shared.TabConstants;
 import me.neznamy.tab.shared.chat.TabTextColor;
 import me.neznamy.tab.shared.chat.component.TabComponent;
 import me.neznamy.tab.shared.chat.component.TabTextComponent;
-import me.neznamy.tab.shared.data.Server;
 import me.neznamy.tab.shared.features.injection.PipelineInjector;
-import me.neznamy.tab.shared.features.proxy.ProxyPlayer;
 import me.neznamy.tab.shared.features.proxy.ProxySupport;
 import me.neznamy.tab.shared.platform.BossBar;
 import me.neznamy.tab.shared.platform.Scoreboard;
@@ -26,7 +25,6 @@ import me.neznamy.tab.shared.platform.TabPlayer;
 import me.neznamy.tab.shared.platform.impl.AdventureBossBar;
 import me.neznamy.tab.shared.platform.impl.DummyScoreboard;
 import me.neznamy.tab.shared.proxy.ProxyPlatform;
-import me.neznamy.tab.shared.util.PerformanceUtil;
 import me.neznamy.tab.shared.util.ReflectionUtils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
@@ -35,6 +33,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.BiConsumer;
 
 /**
  * Velocity implementation of Platform
@@ -52,7 +53,10 @@ public class VelocityPlatform extends ProxyPlatform {
     private final MinecraftChannelIdentifier MCI = MinecraftChannelIdentifier.from(TabConstants.PLUGIN_MESSAGE_CHANNEL_NAME);
 
     /** Logger for components */
-    private static final ComponentLogger logger = ComponentLogger.logger("TAB");
+    private final ComponentLogger logger = ComponentLogger.logger("TAB");
+
+    /** List of custom commands registered to be able to unregister them on reload */
+    private final List<String> customCommands = new ArrayList<>();
 
     /**
      * Constructs new instance with given plugin reference.
@@ -111,33 +115,12 @@ public class VelocityPlatform extends ProxyPlatform {
     }
 
     @Override
-    public void registerPlaceholders() {
-        super.registerPlaceholders();
-        for (RegisteredServer registeredServer : plugin.getServer().getAllServers()) {
-            Server server = Server.byName(registeredServer.getServerInfo().getName());
-            TAB.getInstance().getPlaceholderManager().registerInternalServerPlaceholder("%online_" + server.getName() + "%", 1000, () -> {
-                int count = 0;
-                for (TabPlayer player : TAB.getInstance().getOnlinePlayers()) {
-                    if (player.server == server && !player.isVanished()) count++;
-                }
-                ProxySupport proxySupport = TAB.getInstance().getFeatureManager().getFeature(TabConstants.Feature.PROXY_SUPPORT);
-                if (proxySupport != null) {
-                    for (ProxyPlayer player : proxySupport.getProxyPlayers().values()) {
-                        if (player.server == server && !player.isVanished()) count++;
-                    }
-                }
-                return PerformanceUtil.toString(count);
-            });
-        }
-    }
-
-    @Override
     @Nullable
-    public ProxySupport getProxySupport(@NotNull String plugin) {
+    public ProxySupport getProxySupport(@NotNull String plugin, @NotNull String channelName) {
         if (plugin.equalsIgnoreCase("RedisBungee")) {
             if (ReflectionUtils.classExists("com.imaginarycode.minecraft.redisbungee.RedisBungeeAPI") &&
                     RedisBungeeAPI.getRedisBungeeApi() != null) {
-                return new VelocityRedisSupport(this.plugin);
+                return new VelocityRedisSupport(this.plugin, channelName);
             }
         }
         return null;
@@ -219,7 +202,7 @@ public class VelocityPlatform extends ProxyPlatform {
     @Override
     @Nullable
     public PipelineInjector createPipelineInjector() {
-        return null;
+        return new VelocityPipelineInjector();
     }
 
     @Override
@@ -231,5 +214,29 @@ public class VelocityPlatform extends ProxyPlatform {
     @NotNull
     public String getCommand() {
         return "btab"; // Maybe change it to vtab one day?
+    }
+
+    @Override
+    public void registerCustomCommand(@NotNull String commandName, @NotNull BiConsumer<TabPlayer, String[]> function) {
+        CommandManager cmd = plugin.getServer().getCommandManager();
+        CommandMeta meta = cmd.metaBuilder(commandName).build();
+        customCommands.add(commandName);
+        cmd.register(meta, (SimpleCommand) invocation -> {
+            if (invocation.source() instanceof Player) {
+                TabPlayer p = TAB.getInstance().getPlayer(((Player) invocation.source()).getUniqueId());
+                if (p == null) return; //player not loaded correctly
+                function.accept(p, invocation.arguments());
+            } else {
+                invocation.source().sendMessage(TabComponent.fromColoredText(
+                        TAB.getInstance().getConfiguration().getMessages().getCommandOnlyFromGame()).toAdventure());
+            }
+        });
+    }
+
+    @Override
+    public void unregisterAllCustomCommands() {
+        for (String cmd : customCommands) {
+            plugin.getServer().getCommandManager().unregister(cmd);
+        }
     }
 }

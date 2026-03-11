@@ -26,8 +26,7 @@ See the compatibility table below for current information about compatibility:
 |------------|-----------|
 | Bukkit     | ✔         |
 | BungeeCord | ✔         |
-| Fabric     | ❌         |
-| Sponge     | ❌         |
+| Modded     | ❌         |
 | Velocity   | ❌         |
 
 # Enabling

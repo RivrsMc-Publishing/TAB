@@ -95,11 +95,6 @@ public class NeoForgeTabList extends TrackedTabList<NeoForgeTabPlayer> {
     }
 
     @Override
-    public boolean containsEntry(@NonNull UUID entry) {
-        return true; // TODO?
-    }
-
-    @Override
     @Nullable
     public Skin getSkin() {
         Collection<Property> properties = player.getPlayer().getGameProfile().properties().get(TEXTURES_PROPERTY);
@@ -127,6 +122,7 @@ public class NeoForgeTabList extends TrackedTabList<NeoForgeTabPlayer> {
                 Component displayName = nmsData.displayName();
                 int gameMode = nmsData.gameMode().getId();
                 int latency = nmsData.latency();
+                boolean listed = nmsData.listed();
                 if (actions.contains(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_DISPLAY_NAME)) {
                     TabComponent forcedDisplayName = getForcedDisplayNames().get(nmsData.profileId());
                     if (forcedDisplayName != null && forcedDisplayName.convert() != displayName) {
@@ -135,9 +131,8 @@ public class NeoForgeTabList extends TrackedTabList<NeoForgeTabPlayer> {
                     }
                 }
                 if (actions.contains(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_GAME_MODE)) {
-                    Integer forcedGameMode = getForcedGameModes().get(nmsData.profileId());
-                    if (forcedGameMode != null && forcedGameMode != gameMode) {
-                        gameMode = forcedGameMode;
+                    if (getBlockedSpectators().contains(nmsData.profileId()) && gameMode == 3) {
+                        gameMode = 0;
                         rewriteEntry = rewritePacket = true;
                     }
                 }
@@ -147,11 +142,17 @@ public class NeoForgeTabList extends TrackedTabList<NeoForgeTabPlayer> {
                         rewriteEntry = rewritePacket = true;
                     }
                 }
+                if (actions.contains(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_LISTED)) {
+                    if (allPlayersHidden && nmsData.profileId().getMostSignificantBits() != 0) { // Filter out layout entries
+                        listed = false;
+                        rewriteEntry = rewritePacket = true;
+                    }
+                }
                 if (actions.contains(ClientboundPlayerInfoUpdatePacket.Action.ADD_PLAYER)) {
                     TAB.getInstance().getFeatureManager().onEntryAdd(player, nmsData.profileId(), nmsData.profile().name());
                 }
                 updatedList.add(rewriteEntry ? new ClientboundPlayerInfoUpdatePacket.Entry(
-                        nmsData.profileId(), nmsData.profile(), nmsData.listed(), latency, GameType.byId(gameMode), displayName,
+                        nmsData.profileId(), nmsData.profile(), listed, latency, GameType.byId(gameMode), displayName,
                         nmsData.showHat(), nmsData.listOrder(), nmsData.chatSession()
                 ) : nmsData);
             }

@@ -2,10 +2,12 @@ package me.neznamy.tab.shared.features.layout;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import me.neznamy.tab.shared.chat.EnumChatFormat;
 import me.neznamy.tab.shared.ProtocolVersion;
 import me.neznamy.tab.shared.TAB;
+import me.neznamy.tab.shared.chat.EnumChatFormat;
 import me.neznamy.tab.shared.config.file.ConfigurationSection;
+import me.neznamy.tab.shared.features.layout.pattern.FixedSlotPattern;
+import me.neznamy.tab.shared.features.layout.pattern.GroupPattern;
 import me.neznamy.tab.shared.platform.TabPlayer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -129,9 +131,11 @@ public class LayoutConfiguration {
     @RequiredArgsConstructor
     public static class LayoutDefinition {
 
+        @NotNull private final String name;
         @Nullable private final String condition;
         @Nullable private final String defaultSkin;
-        @NotNull private final List<FixedSlotDefinition> fixedSlots;
+        private final int slotCount;
+        @NotNull private final List<FixedSlotPattern> fixedSlots;
         @NotNull private final LinkedHashMap<String, GroupPattern> groups;
 
         /**
@@ -146,140 +150,132 @@ public class LayoutConfiguration {
          */
         public static LayoutDefinition fromSection(@NotNull String name, @NotNull ConfigurationSection section) {
             // Check keys
-            section.checkForUnknownKey(Arrays.asList("condition", "default-skin", "fixed-slots", "groups"));
+            section.checkForUnknownKey(Arrays.asList("display-condition", "default-skin", "slot-count", "fixed-slots", "groups"));
 
-            List<FixedSlotDefinition> fixedSlots = new ArrayList<>();
+            // Slot count
+            Integer slotCount = section.getInt("slot-count");
+            if (slotCount == null) slotCount = 80;
+            if (slotCount < 0 || slotCount > 80) {
+                section.startupWarn("Layout \"" + name + "\" has invalid slot-count value \"" + slotCount + "\" defined. Slot count must range between 0 - 80. Using 80.");
+                slotCount = 80;
+            }
+
+            // Fixed slots
+            List<FixedSlotPattern> fixedSlots = new ArrayList<>();
             for (String line : section.getStringList("fixed-slots", Collections.emptyList())) {
-                FixedSlotDefinition def = FixedSlotDefinition.fromLine(line, name, section);
+                FixedSlotPattern def = slotFromLine(line, name, section, slotCount);
                 if (def != null) fixedSlots.add(def);
             }
 
+            // Player groups
             ConfigurationSection groupsSection = section.getConfigurationSection("groups");
             LinkedHashMap<String, GroupPattern> groups = new LinkedHashMap<>();
             String noConditionGroup = null;
             Map<Integer, String> takenSlots = new HashMap<>();
             for (Object groupName : groupsSection.getKeys()) {
                 String asString = groupName.toString();
-                GroupPattern pattern = GroupPattern.fromSection(groupsSection.getConfigurationSection(asString), name, asString);
+                GroupPattern pattern = groupFromSection(groupsSection.getConfigurationSection(asString), name, asString, slotCount);
 
                 // Checking for unreachable layout
                 if (noConditionGroup != null) {
                     section.startupWarn("Layout \"" + name + "\"'s player group \"" + groupName + "\" is unreachable, " +
                             "because it is defined after group \"" + noConditionGroup + "\", which has no condition requirement.");
-                } else if (pattern.condition == null) {
+                } else if (pattern.getCondition() == null) {
                     noConditionGroup = asString;
                 }
 
                 // Checking for duplicated slots
-                for (int slot : pattern.slots) {
+                for (int slot : pattern.getSlots()) {
                     if (takenSlots.containsKey(slot)) {
-                        section.startupWarn("Layout \"" + name + "\"'s player group \"" + pattern.name + "\" defines slot " +
+                        section.startupWarn("Layout \"" + name + "\"'s player group \"" + asString + "\" defines slot " +
                                 slot + ", but this slot is already taken by group \"" + takenSlots.get(slot) + "\", which will take priority.");
                     } else {
-                        takenSlots.put(slot, pattern.name);
+                        takenSlots.put(slot, asString);
                     }
                 }
 
                 groups.put(asString, pattern);
             }
+
             return new LayoutDefinition(
-                    section.getString("condition"),
+                    name,
+                    section.getString("display-condition"),
                     section.getString("default-skin"),
+                    slotCount,
                     fixedSlots,
                     groups
             );
         }
 
-        /**
-         * Configuration of a fixed slot.
-         */
-        @Getter
-        @RequiredArgsConstructor
-        public static class FixedSlotDefinition {
+        @NotNull
+        private static GroupPattern groupFromSection(@NotNull ConfigurationSection section, @NotNull String layout,
+                                                @NotNull String groupName, int slotCount) {
+            // Check keys
+            section.checkForUnknownKey(Arrays.asList("display-condition", "slots"));
 
-            private final int slot;
-            @NotNull private final String text;
-            @Nullable private final String skin;
-            @Nullable private final Integer ping;
-
-            @Nullable
-            private static FixedSlotDefinition fromLine(@NotNull String line, @NotNull String layoutName, @NotNull ConfigurationSection section) {
-                String[] array = line.split("\\|");
-
-                if (array.length < 2) {
-                    section.startupWarn("Layout " + layoutName + " has invalid fixed slot defined as \"" + line + "\". " +
-                            "Supported values are \"SLOT|TEXT\" and \"SLOT|TEXT|SKIN\", where SLOT is a number from 1 to 80, " +
-                            "TEXT is displayed text and SKIN is skin used for the slot");
-                    return null;
-                }
-                int slot;
-                try {
-                    slot = Integer.parseInt(array[0]);
-                    if (slot < 1 || slot > 80) {
-                        section.startupWarn("Layout " + layoutName + " has invalid fixed slot value \"" + slot + "\" defined. Slots must range between 1 - 80.");
-                        return null;
+            List<Integer> positions = new ArrayList<>();
+            for (String line : section.getStringList("slots", Collections.emptyList())) {
+                String[] arr = line.split("-");
+                int from = Integer.parseInt(arr[0]);
+                int to = arr.length == 1 ? from : Integer.parseInt(arr[1]);
+                for (int i = from; i<= to; i++) {
+                    if (i < 1 || i > slotCount) {
+                        section.startupWarn("Layout " + layout + "'s player group \"" + groupName + "\" has invalid slot value \"" + i + "\" defined. Slots must range between 1 - " + slotCount + ".");
+                        continue;
                     }
-                } catch (NumberFormatException e) {
-                    section.startupWarn("Layout " + layoutName + " has invalid fixed slot defined as \"" + line + "\". " +
-                            "Supported values are \"SLOT|TEXT\" and \"SLOT|TEXT|SKIN\", where SLOT is a number from 1 to 80, " +
-                            "TEXT is displayed text and SKIN is skin used for the slot");
-                    return null;
-                }
-                String skin = array.length > 2 ? array[2] : null;
-                Integer ping = null;
-                if (array.length > 3) {
-                    try {
-                        ping = (int) Math.round(Double.parseDouble(array[3]));
-                    } catch (NumberFormatException ignored) {
-                        section.startupWarn("Layout " + layoutName + " has fixed slot with defined ping \"" + array[3] + "\", which is not a valid number");
+                    if (positions.contains(i)) {
+                        section.startupWarn("Layout " + layout + "'s player group \"" + groupName + "\" has duplicated slot \"" + i + "\".");
+                        continue;
                     }
+                    positions.add(i);
                 }
-                return new FixedSlotDefinition(slot, array[1], skin, ping);
             }
-
+            return new GroupPattern(
+                    section.getString("display-condition"),
+                    positions.stream().mapToInt(i->i).toArray()
+            );
         }
 
-        /**
-         * Layout pattern for player groups displaying players if they meet a condition.
-         */
-        @Getter
-        @RequiredArgsConstructor
-        public static class GroupPattern {
+        @Nullable
+        private static FixedSlotPattern slotFromLine(@NotNull String line, @NotNull String layoutName,
+                                                     @NotNull ConfigurationSection section, int slotCount) {
+            String[] array = line.split("\\|");
 
-            /** Name of this pattern */
-            @NotNull private final String name;
-
-            /** Condition players must meet to be displayed in this group */
-            @Nullable private final String condition;
-
-            /** Slots to display players in */
-            private final int[] slots;
-
-            @NotNull
-            private static GroupPattern fromSection(@NotNull ConfigurationSection section, @NotNull String layout, @NotNull String groupName) {
-                // Check keys
-                section.checkForUnknownKey(Arrays.asList("condition", "slots"));
-
-                List<Integer> positions = new ArrayList<>();
-                for (String line : section.getStringList("slots", Collections.emptyList())) {
-                    String[] arr = line.split("-");
-                    int from = Integer.parseInt(arr[0]);
-                    int to = arr.length == 1 ? from : Integer.parseInt(arr[1]);
-                    for (int i = from; i<= to; i++) {
-                        if (i < 1 || i > 80) {
-                            section.startupWarn("Layout " + layout + "'s player group \"" + groupName + "\" has invalid slot value \"" + i + "\" defined. Slots must range between 1 - 80.");
-                            continue;
-                        }
-                        if (positions.contains(i)) {
-                            section.startupWarn("Layout " + layout + "'s player group \"" + groupName + "\" has duplicated slot \"" + i + "\".");
-                            continue;
-                        }
-                        positions.add(i);
+            if (array.length < 2) {
+                section.startupWarn("Layout " + layoutName + " has invalid fixed slot defined as \"" + line + "\". " +
+                        "Supported values are \"SLOT|TEXT\", \"SLOT|TEXT|SKIN\" and \"SLOT|TEXT|SKIN|PING\", where SLOT is a number from 1 to " + slotCount + ", " +
+                        "TEXT is displayed text, SKIN is skin used for the slot and PING is the latency value (number or placeholder)");
+                return null;
+            }
+            int slot;
+            try {
+                slot = Integer.parseInt(array[0]);
+                if (slot < 1 || slot > slotCount) {
+                    section.startupWarn("Layout " + layoutName + " has invalid fixed slot value \"" + slot + "\" defined. Slots must range between 1 - " + slotCount + ".");
+                    return null;
+                }
+            } catch (NumberFormatException e) {
+                section.startupWarn("Layout " + layoutName + " has invalid fixed slot defined as \"" + line + "\". " +
+                        "Supported values are \"SLOT|TEXT\", \"SLOT|TEXT|SKIN\" and \"SLOT|TEXT|SKIN|PING\", where SLOT is a number from 1 to " + slotCount + ", " +
+                        "TEXT is displayed text, SKIN is skin used for the slot and PING is the latency value (number or placeholder)");
+                return null;
+            }
+            String skin = array.length > 2 ? array[2] : null;
+            String ping = null;
+            if (array.length > 3) {
+                ping = array[3].trim();
+                if (ping.isEmpty()) {
+                    ping = null;
+                } else if (!ping.contains("%")) {
+                    try {
+                        Double.parseDouble(ping);
+                    } catch (NumberFormatException ignored) {
+                        section.startupWarn("Layout " + layoutName + " has fixed slot with defined ping \"" + array[3] + "\", which is not a valid number");
+                        ping = null;
                     }
                 }
-                String condition = section.getString("condition");
-                return new GroupPattern(groupName, condition, positions.stream().mapToInt(i->i).toArray());
             }
+            return new FixedSlotPattern(slot, array[1], skin, ping);
         }
     }
 }
