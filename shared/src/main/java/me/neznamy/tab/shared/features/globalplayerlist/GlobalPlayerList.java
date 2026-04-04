@@ -184,7 +184,7 @@ public class GlobalPlayerList extends RefreshableFeature implements JoinListener
                 configuration.isUpdateLatency() ? p.getPing() : 0,
                 configuration.isOthersAsSpectators() || (configuration.isVanishedAsSpectators() && p.isVanished()) ? 3 : p.getGamemode(),
                 viewer.getVersion().getNetworkId() >= ProtocolVersion.V1_8.getNetworkId() ? format : null,
-                0,
+                viewer.getVersion().getNetworkId() >= ProtocolVersion.V1_21_11.getNetworkId() ? p.sortingData.listOrder : 0,
                 true
         );
     }

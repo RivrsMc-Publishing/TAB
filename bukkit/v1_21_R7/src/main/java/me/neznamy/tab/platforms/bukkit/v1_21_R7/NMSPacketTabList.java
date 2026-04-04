@@ -8,8 +8,10 @@ import lombok.NonNull;
 import lombok.SneakyThrows;
 import me.neznamy.tab.shared.chat.component.TabComponent;
 import me.neznamy.tab.platforms.bukkit.BukkitTabPlayer;
+import me.neznamy.tab.shared.ProtocolVersion;
 import me.neznamy.tab.shared.TAB;
 import me.neznamy.tab.shared.platform.TabList;
+import me.neznamy.tab.shared.platform.TabPlayer;
 import me.neznamy.tab.shared.platform.decorators.TrackedTabList;
 import me.neznamy.tab.shared.util.ReflectionUtils;
 import net.minecraft.network.chat.IChatBaseComponent;
@@ -162,12 +164,20 @@ public class NMSPacketTabList extends TrackedTabList<BukkitTabPlayer> {
                     rewriteEntry = rewritePacket = true;
                 }
             }
+            int effectiveListOrder = nmsData.h();
             if (actions.contains(ADD_PLAYER)) {
                 TAB.getInstance().getFeatureManager().onEntryAdd(player, profileId, nmsData.b().name());
+                if (player.getVersion().getNetworkId() >= ProtocolVersion.V1_21_11.getNetworkId()) {
+                    TabPlayer target = TAB.getInstance().getPlayer(profileId);
+                    if (target != null && target.sortingData.listOrder != 0) {
+                        effectiveListOrder = target.sortingData.listOrder;
+                        rewriteEntry = rewritePacket = true;
+                    }
+                }
             }
             updatedList.add(rewriteEntry ? new ClientboundPlayerInfoUpdatePacket.b(
                     profileId, nmsData.b(), listed, latency, EnumGamemode.a(gameMode), displayName,
-                    nmsData.g(), nmsData.h(), nmsData.i()
+                    nmsData.g(), effectiveListOrder, nmsData.i()
             ) : nmsData);
         }
         if (rewritePacket) {

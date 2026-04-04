@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import me.neznamy.tab.api.tablist.SortingManager;
 import me.neznamy.tab.shared.Limitations;
+import me.neznamy.tab.shared.ProtocolVersion;
 import me.neznamy.tab.shared.TAB;
 import me.neznamy.tab.shared.TabConstants;
 import me.neznamy.tab.shared.features.layout.LayoutManagerImpl;
@@ -76,6 +77,7 @@ public class Sorting extends RefreshableFeature implements SortingManager, JoinL
         if (!p.sortingData.shortTeamName.equals(previousShortName)) {
             if (nameTags != null) nameTags.updateTeamName(p, p.sortingData.getShortTeamName());
             if (layout != null) layout.updateTeamName(p, p.sortingData.getFullTeamName());
+            updateListOrderForAllViewers(p);
         }
     }
 
@@ -93,6 +95,7 @@ public class Sorting extends RefreshableFeature implements SortingManager, JoinL
     @Override
     public void onJoin(@NotNull TabPlayer connectedPlayer) {
         constructTeamNames(connectedPlayer);
+        updateListOrderForAllViewers(connectedPlayer);
     }
     
     /**
@@ -140,6 +143,25 @@ public class Sorting extends RefreshableFeature implements SortingManager, JoinL
         String finalShortName = checkTeamName(p, shortName);
         p.sortingData.shortTeamName = finalShortName;
         p.sortingData.fullTeamName = fullName.append(finalShortName.charAt(finalShortName.length() - 1)).toString();
+        p.sortingData.listOrder = computeListOrder(p.sortingData.getShortTeamName());
+    }
+
+    private static int computeListOrder(@NotNull String teamName) {
+        int result = 0;
+        for (int i = 0; i < Math.min(3, teamName.length()); i++) {
+            result = result * 256 + Math.min(teamName.charAt(i), 255);
+        }
+        return Integer.MAX_VALUE - result;
+    }
+
+    private void updateListOrderForAllViewers(@NotNull TabPlayer p) {
+        for (TabPlayer viewer : TAB.getInstance().getOnlinePlayers()) {
+            if (viewer.getTabList().containsEntry(p.getTablistId())) {
+                int order = viewer.getVersion().getNetworkId() >= ProtocolVersion.V1_21_11.getNetworkId()
+                        ? p.sortingData.listOrder : 0;
+                viewer.getTabList().updateListOrder(p.getTablistId(), order);
+            }
+        }
     }
 
     /**

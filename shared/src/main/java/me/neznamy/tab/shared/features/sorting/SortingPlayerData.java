@@ -18,6 +18,8 @@ public class SortingPlayerData {
     @Nullable
     public String forcedTeamName;
 
+    public int listOrder;
+
     /**
      * Returns short team name. If forced using API, that value is returned.
      *
