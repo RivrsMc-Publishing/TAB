@@ -12,7 +12,6 @@ import me.neznamy.tab.shared.placeholders.expansion.TabExpansion;
 import me.neznamy.tab.shared.platform.TabPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.List;
@@ -49,7 +48,7 @@ public class FabricTabExpansion implements TabExpansion {
             registerPlaceholder(placeholder, (ctx, arg) -> {
                 if (!ctx.hasPlayer()) return PlaceholderResult.invalid("No player!");
                 TabPlayer player = TAB.getInstance().getPlayer(ctx.player().getUUID());
-                return PlaceholderResult.value(player.expansionValues.get(placeholder));
+                return PlaceholderResult.value(player.expansionData.getValue(placeholder));
             });
         }
 
@@ -87,12 +86,6 @@ public class FabricTabExpansion implements TabExpansion {
 
     private void registerPlaceholder(String identifier, PlaceholderHandler handler) {
         Placeholders.register(Identifier.tryParse(ProjectVariables.PLUGIN_ID+":"+identifier), handler);
-    }
-
-
-    @Override
-    public void setValue(@NotNull TabPlayer player, @NotNull String key, @NotNull String value) {
-        player.expansionValues.put(key, value);
     }
 
     @Override
