@@ -147,12 +147,17 @@ public class PlayerList extends RefreshableFeature implements TabListFormatManag
     public void onServerChange(@NotNull TabPlayer p, @NotNull Server from, @NotNull Server to) {
         updateProperties(p);
         formatPlayerForEveryone(p, true); // Always update because this feature only affects the same server (group)
-        if (TAB.getInstance().getFeatureManager().isFeatureEnabled(TabConstants.Feature.PIPELINE_INJECTION)) return;
+        boolean pipelineInjection = TAB.getInstance().getFeatureManager().isFeatureEnabled(TabConstants.Feature.PIPELINE_INJECTION);
+        // Always re-send display names from p's perspective after server switch.
+        // With pipeline injection the anti-override covers the inverse direction (others → p),
+        // but a race between the tablist clear and packet arrival can leave some entries
+        // unformatted (white) in p's view.  The explicit delayed update here fixes that.
         TAB.getInstance().getCpu().getProcessingThread().executeLater(new TimedCaughtTask(TAB.getInstance().getCpu(), () -> {
             for (TabPlayer all : TAB.getInstance().getOnlinePlayers()) {
                 if (!all.tablistData.disabled.get() && p.server.canSee(all.server))
                     updateDisplayName(p, all, getTabFormat(all, p));
-                if (all != p && !p.tablistData.disabled.get() && all.server.canSee(p.server))
+                // Without pipeline injection also refresh the inverse direction
+                if (!pipelineInjection && all != p && !p.tablistData.disabled.get() && all.server.canSee(p.server))
                     updateDisplayName(all, p, getTabFormat(p, all));
             }
             if (proxy != null) {
