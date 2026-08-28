@@ -254,6 +254,16 @@ public record NeoForgePlatform(MinecraftServer server) implements BackendPlatfor
     }
 
     @Override
+    public void runSyncGlobal(@NotNull Runnable task) {
+        server.execute(task);
+    }
+
+    @Override
+    public boolean hasLineOfSight(@NotNull TabPlayer viewer, @NotNull TabPlayer target) {
+        return ((NeoForgeTabPlayer) viewer).getPlayer().hasLineOfSight(((NeoForgeTabPlayer) target).getPlayer());
+    }
+
+    @Override
     @NotNull
     public Object dump() {
         Map<String, Object> map = new LinkedHashMap<>();
@@ -262,7 +272,9 @@ public record NeoForgePlatform(MinecraftServer server) implements BackendPlatfor
         map.put("server-version", SharedConstants.getCurrentVersion().name());
         map.put("tab-version", ProjectVariables.PLUGIN_VERSION);
         Map<String, Object> mods = new LinkedHashMap<>();
-        for (IModInfo mod : ModList.get().getMods()) {
+        IModInfo[] modArray = ModList.get().getMods().toArray(new IModInfo[0]);
+        Arrays.sort(modArray, Comparator.comparing(IModInfo::getModId, String.CASE_INSENSITIVE_ORDER));
+        for (IModInfo mod : modArray) {
             mods.put(mod.getModId(), mod.getVersion().toString());
         }
         map.put("mods", mods);

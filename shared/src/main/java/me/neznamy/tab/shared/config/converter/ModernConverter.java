@@ -116,7 +116,7 @@ public class ModernConverter {
             config.removeOption("scoreboard.use-numbers");
             config.removeOption("scoreboard.static-number");
         });
-        converters.put(3, config -> config.set("proxy-support.channel-name-suffix", "TAB"));
+        converters.put(3, config -> config.set("proxy-support.channel-name-suffix", "custom"));
         converters.put(4, config -> {
             ConfigurationSection layout = config.getConfigurationSection("layout");
             ConfigurationSection layouts = layout.getConfigurationSection("layouts");
@@ -134,6 +134,9 @@ public class ModernConverter {
         });
         converters.put(5, config -> {
             config.getConfigurationSection("placeholders").put("locale", "en-US");
+        });
+        converters.put(6, config -> {
+            config.getConfigurationSection("belowname-objective").put("view-distance", 10);
         });
     }
 

@@ -7,71 +7,49 @@
 * [Compatibility issues](#compatibility-issues)
 
 # Requirements
-TAB does not depend on any other plugins. The experience can however be enhanced by installing other plugins, see below.
-
-## Java
-TAB's shared module is compiled with Java 8. For the platforms themselves, TAB does have a higher requirement, however, it does not require a Java version higher than the server software itself does. Specifically:
-* Fabric, Forge and NeoForge require Java 21
-* Velocity requires Java 17
-* Bukkit and BungeeCord are ok with Java 8
+TAB does not depend on any other plugins. The experience can however be enhanced by installing other plugins, see below. There is also no additional Java version requirement. If your server runs on your Java version, TAB will too.
 
 # Supported server software and versions
-<table>
-    <thead>
-        <tr>
-            <th>Software type</th>
-            <th>Software name</th>
-            <th>Supported versions</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td rowspan=2>Vanilla</td>
-            <td rowspan=1><a href="https://getbukkit.org/">Bukkit</a> (+forge hybrids)</td>
-            <td>✔ (1.7.x - 1.21.11)</td>
-        </tr>
-        <tr>
-            <td rowspan=1><a href="https://www.spongepowered.org/">Sponge</a></td>
-            <td>❌</td>
-        </tr>
-    </tbody>
-    <tbody>
-        <tr>
-            <td rowspan=3>Modded</td>
-            <td rowspan=1><a href="https://fabricmc.net">Fabric</a></td>
-            <td>✔ (1.21.11)<sup>1</sup></td>
-        </tr>
-        <tr>
-            <td rowspan=1><a href="https://minecraftforge.net">Forge</a></td>
-            <td>✔ (1.21.11)<sup>1</sup></td>
-        </tr>
-        <tr>
-            <td rowspan=1><a href="https://neoforged.net/">NeoForge</a></td>
-            <td>✔ (1.21.11)<sup>1</sup></td>
-        </tr>
-    </tbody>
-    <tbody>
-        <tr>
-            <td rowspan=2>Proxies</td>
-            <td rowspan=1><a href="https://ci.md-5.net/job/BungeeCord/">BungeeCord</a></td>
-            <td>✔ (latest only)<sup>2</sup></td>
-        </tr>
-        <tr>
-            <td rowspan=1><a href="https://www.velocitypowered.com/">Velocity</a></td>
-            <td>✔ (latest only)<sup>2</sup></td>
-        </tr>
-    </tbody>
-</table>
+With the introduction of new Minecraft versions, it is becoming harder and harder to support many versions in the same jar, eventually making it impossible since Minecraft 26.1.  
+**As a general rule, if you want the latest TAB version for your server please use [Modrinth](https://modrinth.com/plugin/tab-was-taken)'s download filter where you can select your server software and version and you'll get the latest jar.**
 
-<sup>1</sup> Modded platforms only support the latest MC version(s). For older MC versions try [Modrinth](https://modrinth.com/plugin/tab-was-taken)'s version download filter. If TAB is not available for your desired Minecraft version or is very outdated, you may [request a backport](https://github.com/NEZNAMY/TAB/issues/new?template=backport.yml).
+Currently, the latest Minecraft version supported by TAB is **26.2**. When new versions come out, TAB is always updated soon after to support them.
 
-<sup>2</sup> Latest only doesn't mean only the latest build will work,
-it means the plugin was made to be compatible with the latest version/build.
+If your server software and version is reasonably popular and TAB hasn't been backported to that version in a very long time, you may [request a backport](https://github.com/NEZNAMY/TAB/issues/new/choose) (unless backports to that version are no longer offered, see below).  
+Since TAB 6.0.0, Minecraft 1.x started taking hits with each subsequent versions - Bukkit versions started disappearing and **modded platforms no longer offer backports of TAB 6.0.0+ to MC 1.x** (this is because the build scripts had to be massively changed for MC 26+).
+
+The sections below provide **additional** information for each platform.
+
+## Bukkit
+TAB 5.5.0 supports all 1.x versions starting with 1.7. For 1.5.2 - 1.6.4, use TAB v5.2.5.  
+Since TAB 6.0.0, support for unused 1.x versions will continue to disappear with each subsequent Minecraft release.
+
+## BungeeCord / Velocity
+For proxies, the plugin is made to work with the latest build.
 Since breaking changes don't happen too often, it means a wide range of versions is usually supported.
 When a breaking change occurs, the plugin is updated to support the new version,
 automatically making old versions incompatible.
 Since proxies support all client versions, there is never a reason to stay outdated,
-so you can always safely update to new version/build of your proxy software if the plugin requires it.
+so you can always safely update to a new build of your proxy software if the plugin requires it.
+
+## Fabric
+Every TAB update only supports the latest Fabric version(s) at the time of release.
+
+Minecraft 1.x - TAB 5.5.0 was backported to 1.20 - 1.21.11 and the jars were uploaded to Modrinth. TAB 5.0.7 supports all Fabric versions from 1.14 to 1.19.4. Backports to 1.x are no longer offered.
+
+## Forge
+Every TAB update only supports the latest Forge version(s) at the time of release.  
+**Currently, Forge 26.x is not supported because the modding tool is broken**.
+
+Minecraft 1.x - TAB 5.5.0 was backported to 1.20 - 1.21.11 and the jars were uploaded to Modrinth, along with a few other random versions people requested. If your version is not available, you may request a backport.
+
+## NeoForge
+Every TAB update only supports the latest NeoForge version(s) at the time of release.
+
+Minecraft 1.x - TAB 5.5.0 was backported to all existing NeoForge versions (1.20.2+) and the jars were uploaded to Modrinth. Backports to 1.x are no longer offered.
+
+## Sponge
+This platform is no longer supported as no one is using it and it has breaking changes to the API with each Minecraft version. Sponge is supposed to be combined with Forge or NeoForge, both of which TAB supports. You can use Modrinth's download filter to see what is available.
 
 # Supported features per platform
 | Feature          <sup>Platform</sup>                                                                                                                               | Bukkit / Hybrid | Fabric / Forge / NeoForge | BungeeCord | Velocity                                                                   |
@@ -112,7 +90,6 @@ Some are available on all platforms, some only in a few.
 * **Waterfall**'s `disable_tab_list_rewrite: true` **may** cause tablist to use offline UUIDs while TAB expects online UUIDs, causing various problems (most notably tablist formatting not working). Checking for this option is not an option either, because tablist rewrite might still be enabled despite being disabled (don't ask how, I have no idea). Set the option to `false` if you are experiencing issues.
 * **ViaVersion on proxy and TAB on backend** acts like a client-sided protocol hack, making it impossible for TAB to know player's real version and causing issues related to it, see [Per-version experience](https://github.com/NEZNAMY/TAB/wiki/Additional-information#per-version-experience) for more info. Avoid this combination. Either install ViaVersion on all backend servers instead or install TAB on the proxy as well.
 * **Nexo**'s `hide_scoreboard_numbers` config option (may apply to ItemsAdder and Oraxen as well) makes [Belowname](https://github.com/NEZNAMY/TAB/wiki/Feature-guide:-Belowname)'s and [Playerlist objective](https://github.com/NEZNAMY/TAB/wiki/Feature-guide:-Playerlist-Objective)'s `value` and `fancy-value` not visible. When using these features, you'll need to keep the option disabled.
-* **LimboAuth** may prevent TAB from applying tablist formatting in a way that is not detectable using Velocity API, resulting in the feature not working properly on join.
 * **Custom clients / resource packs** - Unofficially modified Minecraft clients often tend to break things. Just Lunar client has tons of bugs that can be reproduced with TAB. Resource packs may also contain modifications you are not aware of, making things not look the way you want them to. If you are experiencing any visual issue and are using a custom client or resource pack, try it with a clean vanilla client. If it works there, it's an issue with the client / resource pack and TAB cannot do anything about it.  
   For example, here are a few bugs in LunarClient / FeatherClient that you may run into when using TAB:
   * They add their icon to players in tablist, but don't widen the entries. This results in player names overlapping with latency bar. You can avoid this by configuring some spaces in tabsuffix.

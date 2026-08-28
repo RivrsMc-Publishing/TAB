@@ -15,5 +15,8 @@ public enum NameTagInvisibilityReason {
     HIDE_COMMAND,
 
     /** customtagname property resolved to empty string */
-    EMPTY_CUSTOM_TAG_NAME
+    EMPTY_CUSTOM_TAG_NAME,
+
+    /** /tab nametag opaque command hides nametag from viewers without line of sight */
+    OPAQUE_OCCLUSION
 }

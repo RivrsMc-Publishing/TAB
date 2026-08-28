@@ -6,10 +6,11 @@ import com.mojang.authlib.properties.Property;
 import com.mojang.authlib.properties.PropertyMap;
 import lombok.NonNull;
 import lombok.SneakyThrows;
-import me.neznamy.tab.shared.chat.component.TabComponent;
 import me.neznamy.tab.platforms.bukkit.BukkitTabPlayer;
 import me.neznamy.tab.shared.ProtocolVersion;
 import me.neznamy.tab.shared.TAB;
+import me.neznamy.tab.shared.chat.component.TabComponent;
+import me.neznamy.tab.shared.features.layout.LayoutManagerImpl;
 import me.neznamy.tab.shared.platform.TabList;
 import me.neznamy.tab.shared.platform.TabPlayer;
 import me.neznamy.tab.shared.platform.decorators.TrackedTabList;
@@ -159,7 +160,7 @@ public class NMSPacketTabList extends TrackedTabList<BukkitTabPlayer> {
                 }
             }
             if (actions.contains(UPDATE_LISTED)) {
-                if (allPlayersHidden && nmsData.a().getMostSignificantBits() != 0) { // Filter out layout entries
+                if (allPlayersHidden && !LayoutManagerImpl.UUIDS_SET.contains(nmsData.a())) { // Filter out layout entries
                     listed = false;
                     rewriteEntry = rewritePacket = true;
                 }

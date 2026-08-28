@@ -7,7 +7,6 @@ import me.neznamy.tab.api.bossbar.BarStyle;
 import me.neznamy.tab.api.bossbar.BossBar;
 import me.neznamy.tab.api.bossbar.BossBarManager;
 import me.neznamy.tab.shared.TAB;
-import me.neznamy.tab.shared.TabConstants;
 import me.neznamy.tab.shared.cpu.ThreadExecutor;
 import me.neznamy.tab.shared.cpu.TimedCaughtTask;
 import me.neznamy.tab.shared.features.ToggleManager;
@@ -65,11 +64,16 @@ public class BossBarManagerImpl extends RefreshableFeature implements BossBarMan
     public void load() {
         TAB.getInstance().getPlatform().registerCustomCommand(configuration.getToggleCommand().replaceFirst("/", ""), (p, args) -> {
             if (!isActive()) return;
-            if (p.hasPermission(TabConstants.Permission.COMMAND_BOSSBAR_TOGGLE)) {
-                toggleBossBar(p, true);
+            String[] forwardedArgs;
+            if (args.length == 0) {
+                forwardedArgs = new String[]{"bossbar", "toggle"};
             } else {
-                p.sendMessage(TAB.getInstance().getConfiguration().getMessages().getNoPermission());
+                forwardedArgs = new String[args.length + 2];
+                forwardedArgs[0] = "bossbar";
+                forwardedArgs[1] = "toggle";
+                System.arraycopy(args, 0, forwardedArgs, 2, args.length);
             }
+            TAB.getInstance().getCommand().execute(p, forwardedArgs);
         });
         for (TabPlayer p : TAB.getInstance().getOnlinePlayers()) {
             onJoin(p);
@@ -292,6 +296,19 @@ public class BossBarManagerImpl extends RefreshableFeature implements BossBarMan
                 barMap.put("display-condition is null or met", bar.isConditionMet(player));
                 barMap.put("bossbar is displayed", bar.containsPlayer(player));
                 put(bar.getName(), barMap);
+            }
+        }});
+        map.put("bossbars visible (= not toggled by user)", player.bossbarData.visible);
+        map.put("currently displayed bossbars", new LinkedHashMap<String, Object>() {{
+            for (Map.Entry<BossBarLine, BossBarLinePlayerProperties> line : player.bossbarData.visibleBossBars.entrySet()) {
+                LinkedHashMap<String, Object> barInfo = new LinkedHashMap<>();
+                BossBarLine bar = line.getKey();
+                BossBarLinePlayerProperties properties = line.getValue();
+                barInfo.put("text", properties.textProperty.get());
+                barInfo.put("progress", properties.progressProperty.get());
+                barInfo.put("color", properties.colorProperty.get());
+                barInfo.put("style", properties.styleProperty.get());
+                put(bar.getName(), barInfo);
             }
         }});
         return map;

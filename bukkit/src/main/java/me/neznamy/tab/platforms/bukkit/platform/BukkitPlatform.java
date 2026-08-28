@@ -72,7 +72,7 @@ public class BukkitPlatform implements BackendPlatform {
     private final ServerVersionInfo serverVersionInfo = new ServerVersionInfo();
 
     /** Variables checking presence of other plugins to hook into */
-    private final boolean placeholderAPI = ReflectionUtils.classExists("me.clip.placeholderapi.PlaceholderAPI");
+    private final boolean placeholderAPI = Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI");
 
     /** Spigot field for tracking TPS, the array is final and only being modified instead of re-instantiated */
     private double[] recentTps;
@@ -143,7 +143,8 @@ public class BukkitPlatform implements BackendPlatform {
     @Override
     @Nullable
     public PipelineInjector createPipelineInjector() {
-        return ReflectionUtils.classExists("io.netty.channel.Channel") ? new BukkitPipelineInjector() : null;
+        return serverVersionInfo.getServerVersion().getNetworkId() >= ProtocolVersion.V1_8.getNetworkId()
+                ? new BukkitPipelineInjector() : null;
     }
 
     @Override
@@ -237,7 +238,9 @@ public class BukkitPlatform implements BackendPlatform {
         Metrics metrics = new Metrics(plugin, TabConstants.BSTATS_PLUGIN_ID_BUKKIT);
         metrics.addCustomChart(new SimplePie(TabConstants.MetricsChart.PERMISSION_SYSTEM,
                 () -> TAB.getInstance().getGroupManager().getPermissionPlugin()));
-        metrics.addCustomChart(new SimplePie("tab_6_0_0_servers", serverVersionInfo.getServerVersion()::getFriendlyName));
+        metrics.addCustomChart(new SimplePie("tab_6_1_0_servers",
+                () -> serverVersionInfo.getServerName() + " " + serverVersionInfo.getServerVersion().getFriendlyName()));
+        metrics.addCustomChart(new SimplePie("tab_6_1_0_package", serverVersionInfo::getImplementationPackage));
     }
 
     @Override
@@ -329,6 +332,7 @@ public class BukkitPlatform implements BackendPlatform {
             knownCommands.remove(command.getName() + ":" + command.getName());
             command.unregister(commandMap);
         }
+        customCommands.clear();
     }
 
     @Override
@@ -367,12 +371,27 @@ public class BukkitPlatform implements BackendPlatform {
      * Runs task in the main thread for given entity.
      *
      * @param   entity
-     *          Entity's main thread
+     *          Entity to run the task for
      * @param   task
      *          Task to run
      */
     public void runSync(@NotNull Entity entity, @NotNull Runnable task) {
         Bukkit.getScheduler().runTask(plugin, task);
+    }
+
+    /**
+     * Runs task in the global tick thread.
+     *
+     * @param   task
+     *          Task to run
+     */
+    public void runSyncGlobal(@NotNull Runnable task) {
+        Bukkit.getScheduler().runTask(plugin, task);
+    }
+
+    @Override
+    public boolean hasLineOfSight(@NotNull TabPlayer viewer, @NotNull TabPlayer target) {
+        return ((Player) viewer.getPlayer()).hasLineOfSight((Player) target.getPlayer());
     }
 
     /**
@@ -438,15 +457,20 @@ public class BukkitPlatform implements BackendPlatform {
         map.put("server-name", Bukkit.getName());
         map.put("server-version", serverVersionInfo.getMinecraftVersion());
         map.put("craftbukkit-package", serverVersionInfo.getServerPackage());
+        map.put("nms-implementation", serverVersionInfo.getImplementationProvider().getClass().getName());
         map.put("tab-version", ProjectVariables.PLUGIN_VERSION);
         Map<String, Object> plugins = new LinkedHashMap<>();
-        for (Plugin p : Bukkit.getPluginManager().getPlugins()) {
+        Plugin[] pluginArray = Bukkit.getPluginManager().getPlugins();
+        Arrays.sort(pluginArray, Comparator.comparing(p -> p.getDescription().getName(), String.CASE_INSENSITIVE_ORDER));
+        for (Plugin p : pluginArray) {
             plugins.put(p.getDescription().getName(), p.getDescription().getVersion());
         }
         map.put("plugins", plugins);
         if (placeholderAPI) {
             Map<String, String> expansions = new LinkedHashMap<>();
-            for (PlaceholderExpansion p : PlaceholderAPIPlugin.getInstance().getLocalExpansionManager().getExpansions()) {
+            PlaceholderExpansion[] expansionArray = PlaceholderAPIPlugin.getInstance().getLocalExpansionManager().getExpansions().toArray(new PlaceholderExpansion[0]);
+            Arrays.sort(expansionArray, Comparator.comparing(PlaceholderExpansion::getIdentifier, String.CASE_INSENSITIVE_ORDER));
+            for (PlaceholderExpansion p : expansionArray) {
                 expansions.put(p.getIdentifier(), p.getVersion());
             }
             map.put("placeholderapi-expansions", expansions);

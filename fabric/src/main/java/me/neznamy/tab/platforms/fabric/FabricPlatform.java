@@ -5,11 +5,10 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import com.mojang.authlib.properties.PropertyMap;
 import com.mojang.logging.LogUtils;
-import eu.pb4.placeholders.api.PlaceholderContext;
-import eu.pb4.placeholders.api.Placeholders;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import me.neznamy.tab.platforms.fabric.hook.FabricTabExpansion;
+import me.neznamy.tab.platforms.fabric.hook.PlaceholderAPIHook;
 import me.neznamy.tab.shared.ProjectVariables;
 import me.neznamy.tab.shared.TAB;
 import me.neznamy.tab.shared.backend.BackendPlatform;
@@ -70,10 +69,7 @@ public record FabricPlatform(MinecraftServer server) implements BackendPlatform 
 
         PlaceholderManagerImpl manager = TAB.getInstance().getPlaceholderManager();
         manager.registerPlayerPlaceholder(identifier,
-                p -> Placeholders.parseText(
-                        Component.literal(identifier),
-                        PlaceholderContext.of((ServerPlayer) p.getPlayer())
-                ).getString()
+                p -> PlaceholderAPIHook.parsePlaceholders(identifier, ((FabricTabPlayer) p).getPlayer())
         );
     }
 
@@ -278,6 +274,16 @@ public record FabricPlatform(MinecraftServer server) implements BackendPlatform 
     }
 
     @Override
+    public void runSyncGlobal(@NotNull Runnable task) {
+        server.execute(task);
+    }
+
+    @Override
+    public boolean hasLineOfSight(@NotNull TabPlayer viewer, @NotNull TabPlayer target) {
+        return ((FabricTabPlayer) viewer).getPlayer().hasLineOfSight(((FabricTabPlayer) target).getPlayer());
+    }
+
+    @Override
     @NotNull
     public Object dump() {
         Map<String, Object> map = new LinkedHashMap<>();
@@ -286,7 +292,9 @@ public record FabricPlatform(MinecraftServer server) implements BackendPlatform 
         map.put("server-version", SharedConstants.getCurrentVersion().name());
         map.put("tab-version", ProjectVariables.PLUGIN_VERSION);
         Map<String, Object> mods = new LinkedHashMap<>();
-        for (ModContainer mod : FabricLoader.getInstance().getAllMods()) {
+        ModContainer[] modArray = FabricLoader.getInstance().getAllMods().toArray(new ModContainer[0]);
+        Arrays.sort(modArray, Comparator.comparing(mod -> mod.getMetadata().getId(), String.CASE_INSENSITIVE_ORDER));
+        for (ModContainer mod : modArray) {
             mods.put(mod.getMetadata().getId(), mod.getMetadata().getVersion().getFriendlyString());
         }
         map.put("mods", mods);

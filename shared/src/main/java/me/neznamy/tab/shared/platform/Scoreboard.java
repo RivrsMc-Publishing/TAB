@@ -182,16 +182,6 @@ public interface Scoreboard {
     void updateTeam(@NonNull String name, @NonNull NameVisibility visibility);
 
     /**
-     * Renames a team.
-     *
-     * @param   oldName
-     *          Current team name
-     * @param   newName
-     *          New team name
-     */
-    void renameTeam(@NonNull String oldName, @NonNull String newName);
-
-    /**
      * Resends all objectives and teams.
      */
     void resend();
@@ -200,6 +190,14 @@ public interface Scoreboard {
      * Clears the entire scoreboard by unregistering all objectives and teams.
      */
     void clear();
+
+    /**
+     * Creates a dump of the scoreboard for debugging purposes.
+     *
+     * @return  A map containing the scoreboard's state, including objectives and teams.
+     */
+    @NotNull
+    Map<String, Object> dump();
 
     /**
      * Team collision rule enum.

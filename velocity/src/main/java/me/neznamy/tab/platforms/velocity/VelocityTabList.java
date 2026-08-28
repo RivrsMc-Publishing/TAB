@@ -9,6 +9,8 @@ import com.velocitypowered.proxy.protocol.packet.chat.ComponentHolder;
 import lombok.NonNull;
 import me.neznamy.tab.shared.TAB;
 import me.neznamy.tab.shared.chat.component.TabComponent;
+import me.neznamy.tab.shared.features.layout.LayoutManagerImpl;
+import me.neznamy.tab.shared.platform.TabPlayer;
 import me.neznamy.tab.shared.platform.decorators.TrackedTabList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -162,7 +164,7 @@ public class VelocityTabList extends TrackedTabList<VelocityTabPlayer> {
                     }
                 }
                 if (update.getActions().contains(UpsertPlayerInfoPacket.Action.UPDATE_LISTED)) {
-                    if (allPlayersHidden && item.getProfileId().getMostSignificantBits() != 0) { // Filter out layout entries
+                    if (allPlayersHidden && !LayoutManagerImpl.UUIDS_SET.contains(item.getProfileId())) { // Filter out layout entries
                         item.setListed(false);
                     }
                 }
@@ -178,5 +180,11 @@ public class VelocityTabList extends TrackedTabList<VelocityTabPlayer> {
     @NotNull
     public Collection<UUID> getEntries() {
         return player.getPlayer().getTabList().getEntries().stream().map(e -> e.getProfile().getId()).toList();
+    }
+
+    @Override
+    public void updateGameMode(@NonNull TabPlayer target, int gameMode) {
+        // Override of parent function to skip contains check, because setter will check it too, to avoid double check.
+        updateGameMode(target.getTablistId(), gameMode);
     }
 }

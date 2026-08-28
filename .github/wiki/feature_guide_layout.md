@@ -6,6 +6,9 @@
     * [Player groups](#player-groups)
   * [Chaining layouts](#chaining-layouts)
   * [Skins](#skins)
+* ~Commands~
+* ~Placeholders~
+* ~Limitations~
 * [Compatibility with other plugins](#compatibility-with-other-plugins)
 * [Compatibility with other features](#compatibility-with-other-features)
   * [Playerlist objective incompatibility](#playerlist-objective-incompatibility)
@@ -15,12 +18,14 @@
   * [Additional note 1 - [1.19.3 - 1.21.1] Entries in chat complete](#additional-note-1---1193---1211-entries-in-chat-complete)
   * [Additional note 2 - [1.8 - 1.21.3] Second layer of skin missing](#additional-note-2---18---1213-second-layer-of-skin-missing)
   * [Additional note 3 - Entry overlap](#additional-note-3---entry-overlap)
+* ~Troubleshooting~
+* ~API~
 * [Examples](#examples)
   * [Example 1 - Per-server columns](#example-1---per-server-columns)
   * [Example 2 - Per-world playerlist](#example-2---per-world-playerlist)
 
 # About
-This feature allows you to customize all 80 tablist slots. Displaying less than 4 columns is currently not supported ([here's why](https://gist.github.com/NEZNAMY/3dfcbf7d44283735d3c18266a2851651)). This feature can be enabled and configured in **config.yml** file under **layout** section.
+This feature allows you to customize all 80 tablist slots (possibly less on 1.19.3+). This feature can be enabled and configured in **config.yml** file under **layout** section.
 
 This feature is only available for versions **1.8** and up due to massive tablist changes, which would make 1.7- compatibility require a complete rewrite of the functionality and could still cause all kinds of visual issues, including, but not limited to compatibility with other plugins adding/removing players from the tablist.
 
@@ -169,7 +174,7 @@ Currently, TAB supports these skin formats:
 |--------|---------|-------------|
 | `mineskin:<UUID>` | `mineskin:37e93c8e12cd426cb28fce31969e0674` | Takes UUID from [MineSkin](https://mineskin.org). |
 | `player:<name>` | `player:Notch` | Displays skin of specified player. |
-| `texture:<texture>` | `texture:469b3bac406b51ba0e76c2c218aa4d45fde9ea7c101c85fbd8106c92c4aa36dd` | Uses skin texture from `textures.minecraft.net`. Skin browsing websites show this value. |
+| `texture:<texture>` | `texture:469b3bac406b51ba0e76c2c218aa4d45fde9ea7c101c85fbd8106c92c4aa36dd` | Uses skin texture from `textures.minecraft.net`. Skin browsing websites often show this value (for example `Texture URL` on mineskin.org). |
 
 # Compatibility with other plugins
 This feature does not have any compatibility issues with other plugins.  

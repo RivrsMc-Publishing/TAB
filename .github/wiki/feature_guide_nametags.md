@@ -9,7 +9,6 @@
   * [Name color](#name-color)
 * [Commands](#commands)
 * [Placeholders](#placeholders)
-  * [PlaceholderAPI placeholders](#placeholderapi-placeholders)
 * [Limitations](#limitations)
 * [Compatibility with other plugins](#compatibility-with-other-plugins)
 * [Additional info](#additional-info)
@@ -19,6 +18,7 @@
   * [Additional note 4 - F1 view](#additional-note-4---f1-view)
   * [Additional note 5 - Transparent players](#additional-note-5---transparent-players)
   * [Additional note 6 - Vanish hook](#additional-note-6---vanish-hook)
+* ~Troubleshooting~
 * [API](#api)
   * [Changing prefix and suffix](#changing-prefix-and-suffix)
   * [Collision](#collision)
@@ -142,8 +142,8 @@ This list is browsed through until the first match is found. If no match is foun
 Values are taken independently of each other.
 This means you can set per-world tagprefix, but only keep one global tagsuffix, for example.
 
-You can see the source of a value displayed on player by using `/tab debug <player>` and checking "source"
-part of the value you are looking for.
+You can see the source of a value displayed on player by using `/tab dump <player>`, opening the link and checking "source"
+part of the value you are looking for (tagprefix / tagsuffix).
 
 ## Name color
 On versions 1.12.2 and below, name color follows the last color of prefix. This also includes magic codes. On 1.13+, this is no longer the case. Instead, a new field called "team color" was created. This is an enum constant, where we need to pick from 22 options - 16 colors, 5 magic codes and reset. **As you can see, it doesn't allow for RGB colors**. This also means name can no longer have color and magic codes simultaneously.
@@ -161,9 +161,6 @@ For that reason, TAB detects the last used color code and uses that for team col
 | /tab setcollision \<player\> \<true\|false\>                       | `tab.setcollision`                                                                         | Forces collision rule for specified player, overriding configuration.                                                                                                                                      |
 
 # Placeholders
-This feature does not offer any internal placeholders, only PlaceholderAPI placeholders.
-
-## PlaceholderAPI placeholders
 Here are TAB's PlaceholderAPI placeholders you can use when this feature is enabled:
 | Placeholder | Description |
 |-------------|-------------|

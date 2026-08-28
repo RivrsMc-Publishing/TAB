@@ -105,7 +105,7 @@ public abstract class TabPlayer implements me.neznamy.tab.api.TabPlayer {
     public final ScoreboardPlayerData scoreboardData = new ScoreboardPlayerData();
 
     /** Data for scoreboard team */
-    public final NameTagPlayerData teamData = new NameTagPlayerData();
+    public final NameTagPlayerData teamData = new NameTagPlayerData(this);
 
     /** Data for Layout */
     public final LayoutManagerImpl.PlayerData layoutData = new LayoutManagerImpl.PlayerData();
@@ -383,7 +383,7 @@ public abstract class TabPlayer implements me.neznamy.tab.api.TabPlayer {
         data.put("world", world.getName());
         data.put("permissionGroup", permissionGroup);
         data.put("temporaryGroup", temporaryGroup);
-        data.put("bedrockPlayer", bedrockPlayer);
+        data.put("bedrockPlayer", bedrockPlayer + " (floodgate is installed: " + FloodgateHook.getInstance().isInstalled() + ")");
         data.put("protocolVersion", versionId);
         data.put("gameVersion", version.getFriendlyName());
         data.put("loaded", loaded);
@@ -450,4 +450,12 @@ public abstract class TabPlayer implements me.neznamy.tab.api.TabPlayer {
      * @return  Server platform
      */
     public abstract Platform getPlatform();
+
+    /**
+     * Sets view distance of belowname assigned to this player.
+     *
+     * @param   distance
+     *          View distance of this player's belowname
+     */
+    public abstract void setBelowNameDistance(double distance);
 }

@@ -1,5 +1,5 @@
 plugins {
-    id("io.papermc.paperweight.userdev") version "2.0.0-beta.19"
+    id("io.papermc.paperweight.userdev") version "2.0.0-beta.21"
 }
 
 repositories {
@@ -25,4 +25,12 @@ dependencies {
 
 tasks.compileJava {
     options.release.set(21)
+}
+
+// Fork: codebook (Paper dev bundle for this MC version) uses ASM 9.6, which cannot read
+// Java 25 class files (major version 69). Run paperweight remap and compilation on JDK 21.
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(21))
+    }
 }

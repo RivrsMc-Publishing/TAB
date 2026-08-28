@@ -8,12 +8,12 @@
   * [Chaining scoreboards](#chaining-scoreboards)
 * [Commands](#commands)
 * [Placeholders](#placeholders)
-  * [PlaceholderAPI placeholders](#placeholderapi-placeholders)
 * [Limitations](#limitations)
 * [Compatibility with other plugins](#compatibility-with-other-plugins)
 * [Additional info](#additional-info)
   * [Additional note 1 - Text alignment](#additional-note-1---text-alignment)
   * [Additional note 2 - Geyser / Bedrock issues](#additional-note-2---geyser--bedrock-issues)
+* ~Troubleshooting~
 * [API](#api)
   * [Creating custom scoreboards](#creating-custom-scoreboards)
   * [Showing custom scoreboards](#showing-custom-scoreboards)
@@ -78,11 +78,8 @@ All of the options are explained in the following table.
 | toggle-command             | /sb           | Command that can be used to toggle scoreboard for the player running the command. Players need `tab.scoreboard.toggle` permission to use it. <br />**Note:** Commands are not supposed to be registered / unregistered dynamically at runtime. As such, you may run into small issues when changing the toggle command and reloading. After you modify the command to your liking, reconnect to properly see it in tabcomplete. If you don't use TAB on a proxy, consider restarting the server as well for the old command to actually be unregistered. |
 | remember-toggle-choice     | false         | When enabled, toggling decision is saved into a file to remember it even after reloads/restarts/reconnects                                                                                                                                                                                                                                                                                                                                                 |
 | hidden-by-default          | false         | If enabled, scoreboard will automatically be hidden on join until toggle command is used to show it.                                                                                                                                                                                                                                                                                                                                                       |
-| use-numbers                | false         | If enabled, numbers 1-15 will be used in the scoreboard. If disabled, `static-number` is shown everywhere. Will not be visible for 1.20.3+ players, instead, you can configure any text to show using `\|\|text` in the lines (scroll up for more info).                                                                                                                                                                                                   |
-| static-number              | 0             | If `use-numbers` is disabled, this is number to be in all lines.                                                                                                                                                                                                                                                                                                                                                                                           |
 | delay-on-join-milliseconds | 0             | Delay in milliseconds to send scoreboard after joining.                                                                                                                                                                                                                                                                                                                                                                                                    |
-| scoreboards                | *Map*         | Scoreboards to display based on conditions (see below for more info).
-|
+| scoreboards                | *Map*         | Scoreboards to display based on conditions (see below for more info). |
 
 ## Scoreboard
 A scoreboard consists of the following options:
@@ -219,9 +216,6 @@ If a player meets both conditions (has defined permission and is in defined worl
 | `/tab scoreboard announce <name> <duration>`         | `tab.announce.scoreboard`                                                                | Shows the scoreboard with the given `name` to every player on the server for the given `duration`, in seconds.                                                                                   |
 
 # Placeholders
-This feature does not offer any internal placeholders, only PlaceholderAPI placeholders.
-
-## PlaceholderAPI placeholders
 Here are TAB's PlaceholderAPI placeholders you can use when this feature is enabled:
 | Placeholder | Description |
 |-------------|-------------|
