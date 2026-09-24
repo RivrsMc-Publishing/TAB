@@ -172,8 +172,32 @@ public class VelocityTabList extends TrackedTabList<VelocityTabPlayer> {
                     TAB.getInstance().getFeatureManager().onEntryAdd(player, item.getProfileId(), item.getProfile().getName());
                 }
             }
+            injectListOrder(update);
         }
         return packet;
+    }
+
+    /**
+     * Fork: forces TAB's computed list order into entries added / reordered by the backend for 1.21.11+ clients,
+     * so they are sorted consistently with entries TAB manages itself (global playerlist, sorting updates).
+     * Without this, backend entries arrive with list order 0 and end up below every entry with a list order set.
+     *
+     * @param   update
+     *          Player info packet sent by the backend
+     */
+    private void injectListOrder(@NotNull UpsertPlayerInfoPacket update) {
+        if (player.getVersionId() < me.neznamy.tab.shared.ProtocolVersion.V1_21_11.getNetworkId()) return;
+        if (!update.containsAction(UpsertPlayerInfoPacket.Action.ADD_PLAYER) &&
+                !update.containsAction(UpsertPlayerInfoPacket.Action.UPDATE_LIST_ORDER)) return;
+        boolean modified = false;
+        for (UpsertPlayerInfoPacket.Entry item : update.getEntries()) {
+            TabPlayer target = TAB.getInstance().getPlayer(item.getProfileId());
+            if (target != null && target.sortingData.listOrder != 0) {
+                item.setListOrder(target.sortingData.listOrder);
+                modified = true;
+            }
+        }
+        if (modified) update.addAction(UpsertPlayerInfoPacket.Action.UPDATE_LIST_ORDER);
     }
 
     @Override
