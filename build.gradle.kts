@@ -4,7 +4,7 @@ plugins {
 
 allprojects {
     group = "me.neznamy"
-    version = "6.1.2"
+    version = "6.2.1-SNAPSHOT"
     description = "An all-in-one solution that works"
 
     ext.set("id", "tab")
@@ -27,8 +27,6 @@ val platformPaths = setOf(
     ":bukkit:v1_16_R3",
     ":bukkit:v1_17_R1",
     ":bukkit:v1_18_R2",
-    ":bukkit:v1_19_R1",
-    ":bukkit:v1_19_R2",
     ":bukkit:v1_19_R3",
     ":bukkit:v1_20_R1",
     ":bukkit:v1_20_R2",
