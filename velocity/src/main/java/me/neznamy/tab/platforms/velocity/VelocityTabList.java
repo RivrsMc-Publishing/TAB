@@ -8,8 +8,11 @@ import com.velocitypowered.proxy.protocol.packet.UpsertPlayerInfoPacket;
 import com.velocitypowered.proxy.protocol.packet.chat.ComponentHolder;
 import lombok.NonNull;
 import me.neznamy.tab.shared.TAB;
+import me.neznamy.tab.shared.TabConstants;
 import me.neznamy.tab.shared.chat.component.TabComponent;
 import me.neznamy.tab.shared.features.layout.LayoutManagerImpl;
+import me.neznamy.tab.shared.features.proxy.ProxyPlayer;
+import me.neznamy.tab.shared.features.proxy.ProxySupport;
 import me.neznamy.tab.shared.platform.TabPlayer;
 import me.neznamy.tab.shared.platform.decorators.TrackedTabList;
 import org.jetbrains.annotations.NotNull;
@@ -191,13 +194,30 @@ public class VelocityTabList extends TrackedTabList<VelocityTabPlayer> {
                 !update.containsAction(UpsertPlayerInfoPacket.Action.UPDATE_LIST_ORDER)) return;
         boolean modified = false;
         for (UpsertPlayerInfoPacket.Entry item : update.getEntries()) {
-            TabPlayer target = TAB.getInstance().getPlayer(item.getProfileId());
-            if (target != null && target.sortingData.listOrder != 0) {
-                item.setListOrder(target.sortingData.listOrder);
+            int listOrder = getListOrder(item.getProfileId());
+            if (listOrder != 0) {
+                item.setListOrder(listOrder);
                 modified = true;
             }
         }
         if (modified) update.addAction(UpsertPlayerInfoPacket.Action.UPDATE_LIST_ORDER);
+    }
+
+    /**
+     * Fork: returns TAB's computed list order of a player, either connected to this proxy or to another one
+     * (backend sends entries of all players on the server, including those connected through other proxies).
+     *
+     * @param   id
+     *          UUID of the entry
+     * @return  List order of the player, 0 if player is unknown or has no sorting data yet
+     */
+    private int getListOrder(@NotNull UUID id) {
+        TabPlayer target = TAB.getInstance().getPlayer(id);
+        if (target != null) return target.sortingData.listOrder;
+        ProxySupport proxy = TAB.getInstance().getFeatureManager().getFeature(TabConstants.Feature.PROXY_SUPPORT);
+        if (proxy == null) return 0;
+        ProxyPlayer proxyPlayer = proxy.getProxyPlayers().get(id);
+        return proxyPlayer == null ? 0 : proxyPlayer.getListOrder(player);
     }
 
     @Override
