@@ -69,8 +69,9 @@ public class NameTag extends TabFeature implements NameTagManager, JoinListener,
         TAB.getInstance().getFeatureManager().registerFeature(TabConstants.Feature.NAME_TAGS_COLLISION, collisionManager);
         TAB.getInstance().getFeatureManager().registerFeature(TabConstants.Feature.NAME_TAGS_PREFIX_SUFFIX, prefixSuffixManager);
         for (TabPlayer all : onlinePlayers.getPlayers()) {
-            prefixSuffixManager.loadProperties(all);
+            // Team name must be set before loading properties, because customtagname visibility update may send a proxy message
             all.teamData.teamName = all.sortingData.shortTeamName; // Sorting is loaded sync before nametags
+            prefixSuffixManager.loadProperties(all);
             if (disableChecker.isDisableConditionMet(all)) {
                 all.teamData.disabled.set(true);
                 continue;
@@ -93,8 +94,9 @@ public class NameTag extends TabFeature implements NameTagManager, JoinListener,
     @Override
     public void onJoin(@NotNull TabPlayer connectedPlayer) {
         onlinePlayers.addPlayer(connectedPlayer);
-        prefixSuffixManager.loadProperties(connectedPlayer);
+        // Team name must be set before loading properties, because customtagname visibility update may send a proxy message
         connectedPlayer.teamData.teamName = connectedPlayer.sortingData.shortTeamName; // Sorting is loaded sync before nametags
+        prefixSuffixManager.loadProperties(connectedPlayer);
         for (TabPlayer all : onlinePlayers.getPlayers()) {
             if (all == connectedPlayer) continue; //avoiding double registration
             if (connectedPlayer.isVanished() && !all.canSee(connectedPlayer)) {
