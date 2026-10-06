@@ -2,13 +2,16 @@ package me.neznamy.tab.shared.features.proxy;
 
 import lombok.Getter;
 import lombok.Setter;
+import me.neznamy.tab.shared.ProtocolVersion;
 import me.neznamy.tab.shared.TabConstants.Permission;
 import me.neznamy.tab.shared.data.Server;
 import me.neznamy.tab.shared.features.belowname.BelowNameProxyPlayerData;
 import me.neznamy.tab.shared.features.nametags.NameTagProxyPlayerData;
 import me.neznamy.tab.shared.features.playerlist.PlayerListProxyPlayerData;
 import me.neznamy.tab.shared.features.playerlistobjective.PlayerListObjectiveProxyPlayerData;
+import me.neznamy.tab.shared.features.sorting.Sorting;
 import me.neznamy.tab.shared.platform.TabList;
+import me.neznamy.tab.shared.platform.TabPlayer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -104,11 +107,29 @@ public class ProxyPlayer {
     /**
      * Creates a new entry for this player to be used in tablist.
      *
+     * @param   viewer
+     *          Player who will see the entry
      * @return  TabList.Entry representing this player
      */
     @NotNull
-    public TabList.Entry asEntry() {
-        return new TabList.Entry(uniqueId, nickname, skin, true, 0, 0, tabFormat == null ? null : tabFormat.getFormatComponent(), 0, true);
+    public TabList.Entry asEntry(@NotNull TabPlayer viewer) {
+        return new TabList.Entry(uniqueId, nickname, skin, true, 0, 0, tabFormat == null ? null : tabFormat.getFormatComponent(),
+                getListOrder(viewer), true);
+    }
+
+    /**
+     * Fork: returns list order of this player for specified viewer, computed from the team name
+     * received from player's proxy the same way as for local players (see {@link Sorting#computeListOrder(String)}).
+     * Without this, players connected to another proxy would have list order 0 and end up below
+     * all local players on 1.21.11+ clients regardless of their sorting.
+     *
+     * @param   viewer
+     *          Player viewing this player's tablist entry
+     * @return  List order for specified viewer, 0 if viewer is below 1.21.11 or nametag data was not received yet
+     */
+    public int getListOrder(@NotNull TabPlayer viewer) {
+        if (nametag == null || viewer.getVersion().getNetworkId() < ProtocolVersion.V1_21_11.getNetworkId()) return 0;
+        return Sorting.computeListOrder(nametag.getTeamName());
     }
 
     /**

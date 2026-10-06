@@ -146,7 +146,15 @@ public class Sorting extends RefreshableFeature implements SortingManager, JoinL
         p.sortingData.listOrder = computeListOrder(p.sortingData.getShortTeamName());
     }
 
-    private static int computeListOrder(@NotNull String teamName) {
+    /**
+     * Fork: computes list order from first 3 characters of a team name, so that 1.21.2+ clients
+     * (which sort by list order before team name) display entries in the configured sorting order.
+     *
+     * @param   teamName
+     *          Short team name of the player
+     * @return  List order to use for the player
+     */
+    public static int computeListOrder(@NotNull String teamName) {
         int result = 0;
         for (int i = 0; i < Math.min(3, teamName.length()); i++) {
             result = result * 256 + Math.min(teamName.charAt(i), 255);

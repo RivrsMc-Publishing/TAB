@@ -5,10 +5,12 @@ import com.google.common.io.ByteArrayDataOutput;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
+import me.neznamy.tab.shared.ProtocolVersion;
 import me.neznamy.tab.shared.TAB;
 import me.neznamy.tab.shared.chat.component.TabComponent;
 import me.neznamy.tab.shared.cpu.ThreadExecutor;
 import me.neznamy.tab.shared.features.proxy.ProxyPlayer;
+import me.neznamy.tab.shared.features.sorting.Sorting;
 import me.neznamy.tab.shared.features.proxy.ProxySupport;
 import me.neznamy.tab.shared.features.proxy.QueuedData;
 import me.neznamy.tab.shared.features.proxy.message.ProxyMessage;
@@ -94,6 +96,9 @@ public class NameTagProxyPlayerData extends ProxyMessage {
         target.setNametag(this);
 
         if (target.getConnectionState() == ProxyPlayer.ConnectionState.CONNECTED) {
+            if (oldData == null || Sorting.computeListOrder(oldData.teamName) != Sorting.computeListOrder(teamName)) {
+                updateListOrder(target);
+            }
             TabComponent prefix = feature.getPrefixCache().get(this.prefix);
             TabComponent lastColor = feature.getLastColorCache().get(this.prefix);
             TabComponent suffix = feature.getSuffixCache().get(this.suffix);
@@ -146,6 +151,23 @@ public class NameTagProxyPlayerData extends ProxyMessage {
                             lastColor.getLastStyle().toEnumChatFormat()
                     );
                 }
+            }
+        }
+    }
+
+    /**
+     * Fork: sends list order of a player connected to another proxy to all viewers who have the player
+     * in their tablist (added by global playerlist or by the backend server), so they are sorted
+     * together with local players on 1.21.11+ clients.
+     *
+     * @param   target
+     *          Player connected to another proxy
+     */
+    private void updateListOrder(@NotNull ProxyPlayer target) {
+        for (TabPlayer viewer : feature.getOnlinePlayers().getPlayers()) {
+            if (viewer.getVersion().getNetworkId() < ProtocolVersion.V1_21_11.getNetworkId()) continue;
+            if (viewer.getTabList().containsEntry(target.getTablistId())) {
+                viewer.getTabList().updateListOrder(target.getTablistId(), target.getListOrder(viewer));
             }
         }
     }
